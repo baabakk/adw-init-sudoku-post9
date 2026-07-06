@@ -1,5 +1,5 @@
-// web-client — Web Client
-// Scope: Browser SPA that renders an interactive Sudoku board, allows difficulty selection, fetches puzzles from Puzzle Service, validates submissions, submits scores to Scores Service, and displays the leaderboard.
-// Owns: packages/web
-// This team builds its slice here each phase.
+import './index.tsx';
+
+// This file re-exports side effects from the main React entry point.
+// It contains no JSX to satisfy TypeScript's .ts file restrictions.
 export {};

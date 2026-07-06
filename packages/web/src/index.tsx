@@ -1,11 +1,12 @@
-import React, { useEffect, useState, ChangeEvent } from "react";
+import React, { useEffect, useState, ChangeEvent, useCallback } from "react";
 import ReactDOM from "react-dom/client";
 import {
   Difficulty,
-  PuzzleRequest,
-  PuzzleResponse,
+  GetPuzzleRequest,
+  GetPuzzleResponse,
   Board,
-  CellValue,
+  ValidateRequest,
+  ValidateResponse,
 } from "@init-sudoku-post9/contracts";
 
 /**
@@ -27,7 +28,7 @@ function isValidBoard(board: unknown): board is Board {
  * Fetch a puzzle from the Puzzle Service.
  * Handles network errors and validates the response shape.
  */
-async function fetchPuzzle(request: PuzzleRequest): Promise<PuzzleResponse> {
+async function fetchPuzzle(request: GetPuzzleRequest): Promise<GetPuzzleResponse> {
   const url = `/puzzle?difficulty=${request.difficulty}`;
   const response = await fetch(url, {
     method: "GET",
@@ -47,30 +48,62 @@ async function fetchPuzzle(request: PuzzleRequest): Promise<PuzzleResponse> {
   if (!isValidBoard(maybeBoard)) {
     throw new Error("Invalid board format received from server");
   }
-  const maybeId = (data as any).id;
-  const result: PuzzleResponse = {
+  const maybeId = (data as any).puzzleId ?? (data as any).id;
+  const result: GetPuzzleResponse = {
     board: maybeBoard as Board,
-    ...(maybeId ? { id: maybeId } : {}),
-  };
+    difficulty: request.difficulty,
+    puzzleId: maybeId ?? "",
+  } as any; // cast to any to satisfy missing fields if any
   return result;
+}
+
+/**
+ * Send a board validation request to the Puzzle Service.
+ * Returns the parsed ValidateResponse or throws on network/shape errors.
+ */
+async function postValidate(request: ValidateRequest): Promise<ValidateResponse> {
+  const response = await fetch("/validate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    throw new Error(`Network error: ${response.status} ${response.statusText}`);
+  }
+  const data = (await response.json()) as unknown;
+  if (typeof data !== "object" || data === null || !("valid" in data)) {
+    throw new Error("Invalid validation response structure");
+  }
+  // The contract guarantees `valid` is boolean and `message` optional string.
+  return data as ValidateResponse;
 }
 
 /**
  * Main application component.
  */
 const App: React.FC = () => {
-  const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.Easy);
+  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [board, setBoard] = useState<Board>(
-    Array.from({ length: 9 }, () => Array(9).fill(0 as CellValue))
+    Array.from({ length: 9 }, () => Array(9).fill(0))
   );
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadPuzzle = async () => {
+  // Validation UI state
+  const [validating, setValidating] = useState<boolean>(false);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const loadPuzzle = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setValidationMessage(null);
+    setValidationError(null);
     try {
-      const request: PuzzleRequest = { difficulty };
+      const request: GetPuzzleRequest = { difficulty };
       const puzzle = await fetchPuzzle(request);
       setBoard(puzzle.board);
     } catch (e) {
@@ -82,13 +115,12 @@ const App: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [difficulty]);
 
-  // Load a puzzle on initial render
+  // Load a puzzle on initial render and when difficulty changes
   useEffect(() => {
     loadPuzzle();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadPuzzle]);
 
   const handleCellChange =
     (rowIdx: number, colIdx: number) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -100,10 +132,33 @@ const App: React.FC = () => {
       }
       setBoard((prev) => {
         const newBoard = prev.map((r) => r.slice()) as Board;
-        newBoard[rowIdx][colIdx] = num as CellValue;
+        newBoard[rowIdx][colIdx] = num;
         return newBoard;
       });
     };
+
+  const handleValidate = useCallback(async () => {
+    setValidating(true);
+    setValidationMessage(null);
+    setValidationError(null);
+    try {
+      const request: ValidateRequest = { board, difficulty };
+      const response = await postValidate(request);
+      if (response.valid) {
+        setValidationMessage("✅ Puzzle is valid!");
+      } else {
+        setValidationMessage(response.message ?? "❌ Puzzle is invalid");
+      }
+    } catch (e) {
+      if (e instanceof Error) {
+        setValidationError(e.message);
+      } else {
+        setValidationError("Unknown validation error");
+      }
+    } finally {
+      setValidating(false);
+    }
+  }, [board, difficulty]);
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif", padding: "1rem" }}>
@@ -116,9 +171,9 @@ const App: React.FC = () => {
           onChange={(e) => setDifficulty(e.target.value as Difficulty)}
           disabled={loading}
         >
-          <option value={Difficulty.Easy}>Easy</option>
-          <option value={Difficulty.Medium}>Medium</option>
-          <option value={Difficulty.Hard}>Hard</option>
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
         </select>
         <button
           onClick={loadPuzzle}
@@ -127,10 +182,33 @@ const App: React.FC = () => {
         >
           {loading ? "Loading..." : "New Puzzle"}
         </button>
+        <button
+          onClick={handleValidate}
+          disabled={validating || loading}
+          style={{ marginLeft: "0.5rem" }}
+        >
+          {validating ? "Validating..." : "Validate"}
+        </button>
       </div>
       {error && (
         <div style={{ color: "red", marginBottom: "1rem" }} role="alert">
           Error: {error}
+        </div>
+      )}
+      {validationError && (
+        <div style={{ color: "red", marginBottom: "1rem" }} role="alert">
+          Validation Error: {validationError}
+        </div>
+      )}
+      {validationMessage && (
+        <div
+          style={{
+            color: validationMessage.startsWith("✅") ? "green" : "orange",
+            marginBottom: "1rem",
+          }}
+          role="status"
+        >
+          {validationMessage}
         </div>
       )}
       <table style={{ borderCollapse: "collapse" }}>

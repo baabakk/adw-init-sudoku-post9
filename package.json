@@ -1,0 +1,18 @@
+{
+  "name": "init-sudoku-post9",
+  "private": true,
+  "workspaces": [
+    "packages/contracts",
+    "packages/web",
+    "packages/puzzle-service",
+    "packages/scores-service"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "test": "echo \"Define per-package tests\" && exit 0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "@types/node": "^24.0.0"
+  }
+}

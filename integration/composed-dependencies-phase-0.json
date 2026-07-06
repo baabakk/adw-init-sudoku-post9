@@ -1,0 +1,12 @@
+{
+  "phaseNumber": 0,
+  "resolvedDependencies": {
+    "@init-sudoku-post9/contracts": "*"
+  },
+  "declaredBy": [
+    "packages/contracts",
+    "packages/puzzle-service",
+    "packages/scores-service",
+    "packages/web"
+  ]
+}

@@ -9,7 +9,7 @@ import {
 } from "@init-sudoku-post9/contracts";
 
 /**
- * Utility to validate that a board conforms to the contract expectations.
+ * Runtime validation that a board conforms to the contract expectations.
  * Returns true if the board is a 9×9 array of integers between 0 and 9 inclusive.
  */
 function isValidBoard(board: unknown): board is Board {
@@ -49,7 +49,7 @@ async function fetchPuzzle(request: PuzzleRequest): Promise<PuzzleResponse> {
   }
   const maybeId = (data as any).id;
   const result: PuzzleResponse = {
-    board: maybeBoard,
+    board: maybeBoard as Board,
     ...(maybeId ? { id: maybeId } : {}),
   };
   return result;
@@ -72,7 +72,7 @@ const App: React.FC = () => {
     try {
       const request: PuzzleRequest = { difficulty };
       const puzzle = await fetchPuzzle(request);
-      setBoard(puzzle.board as Board);
+      setBoard(puzzle.board);
     } catch (e) {
       if (e instanceof Error) {
         setError(e.message);

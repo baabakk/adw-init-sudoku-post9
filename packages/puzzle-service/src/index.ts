@@ -8,6 +8,8 @@ import {
   Puzzle,
   PuzzleRequest,
   PuzzleResponse,
+  ValidateRequest,
+  ValidateResponse,
 } from "../../contracts/src";
 
 /**
@@ -107,10 +109,10 @@ class SudokuGenerator {
     const full = SudokuGenerator.generateFullBoard();
     // Number of clues based on difficulty (standard ranges)
     const cluesMap: Record<Difficulty, number> = {
-      [Difficulty.Easy]: 36,
-      [Difficulty.Medium]: 32,
-      [Difficulty.Hard]: 28,
-    };
+      easy: 36,
+      medium: 32,
+      hard: 28,
+    } as any;
     const clues = cluesMap[difficulty];
     const cells = Array.from({ length: 81 }, (_, i) => i);
     const shuffle = (arr: number[]) => arr.sort(() => Math.random() - 0.5);
@@ -180,8 +182,8 @@ app.get("/puzzle", async (req: Request, res: Response) => {
   if (!diffParam) {
     return res.status(400).json({ error: "Missing difficulty query parameter" });
   }
-  const difficulty = (diffParam.toLowerCase() as keyof typeof Difficulty) as Difficulty;
-  if (!Object.values(Difficulty).includes(difficulty)) {
+  const difficulty = diffParam.toLowerCase() as Difficulty;
+  if (!["easy", "medium", "hard"].includes(difficulty)) {
     return res.status(400).json({ error: "Invalid difficulty value" });
   }
 
@@ -204,8 +206,96 @@ app.get("/puzzle", async (req: Request, res: Response) => {
   }
 });
 
-// Export the contracts for downstream consumers
-export { PuzzleRequest, PuzzleResponse } from "../../contracts/src";
+/**
+ * Validate a submitted Sudoku board.
+ * Returns { valid: true } if the board satisfies Sudoku rules, otherwise
+ * { valid: false, message: <reason> }.
+ */
+function validateBoard(board: Board): { valid: boolean; message?: string } {
+  // Basic shape validation
+  if (!Array.isArray(board) || board.length !== 9) {
+    return { valid: false, message: "Board must be a 9x9 array" };
+  }
+  for (let r = 0; r < 9; r++) {
+    const row = board[r];
+    if (!Array.isArray(row) || row.length !== 9) {
+      return { valid: false, message: `Row ${r + 1} must contain 9 cells` };
+    }
+    for (let c = 0; c < 9; c++) {
+      const cell = row[c];
+      if (typeof cell !== "number" || cell < 0 || cell > 9) {
+        return { valid: false, message: `Cell (${r + 1},${c + 1}) must be an integer between 0 and 9` };
+      }
+    }
+  }
+
+  // Helper to check duplicates in an array of numbers (ignoring zeros)
+  const hasDuplicates = (arr: number[]): boolean => {
+    const seen = new Set<number>();
+    for (const n of arr) {
+      if (n === 0) continue;
+      if (seen.has(n)) return true;
+      seen.add(n);
+    }
+    return false;
+  };
+
+  // Row validation
+  for (let r = 0; r < 9; r++) {
+    if (hasDuplicates(board[r])) {
+      return { valid: false, message: `Duplicate value in row ${r + 1}` };
+    }
+  }
+
+  // Column validation
+  for (let c = 0; c < 9; c++) {
+    const col: number[] = [];
+    for (let r = 0; r < 9; r++) col.push(board[r][c]);
+    if (hasDuplicates(col)) {
+      return { valid: false, message: `Duplicate value in column ${c + 1}` };
+    }
+  }
+
+  // Subgrid validation
+  for (let br = 0; br < 3; br++) {
+    for (let bc = 0; bc < 3; bc++) {
+      const cells: number[] = [];
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          cells.push(board[br * 3 + r][bc * 3 + c]);
+        }
+      }
+      if (hasDuplicates(cells)) {
+        return { valid: false, message: `Duplicate value in 3x3 subgrid (${br + 1},${bc + 1})` };
+      }
+    }
+  }
+
+  return { valid: true };
+}
+
+/** POST /validate */
+app.post("/validate", async (req: Request, res: Response) => {
+  const payload = req.body as ValidateRequest;
+  const { board, difficulty } = payload;
+
+  // Difficulty validation
+  if (!difficulty || !["easy", "medium", "hard"].includes(difficulty)) {
+    const errorResp: ValidateResponse = { valid: false, message: "Invalid or missing difficulty" };
+    return res.status(400).json(errorResp);
+  }
+
+  // Board validation using helper
+  const result = validateBoard(board);
+  const response: ValidateResponse = {
+    valid: result.valid,
+    ...(result.message ? { message: result.message } : {}),
+  };
+  res.json(response);
+});
+
+// Export the contracts for downstream consumers (kept for compatibility)
+export { PuzzleRequest, PuzzleResponse, ValidateRequest, ValidateResponse } from "../../contracts/src";
 
 // Start server if this file is executed directly
 if (require.main === module) {

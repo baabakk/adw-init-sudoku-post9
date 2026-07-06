@@ -5,14 +5,13 @@
     "rootDir": "src",
     "strict": true,
     "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "moduleResolution": "NodeNext",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"]
   },
   "references": [
     {
       "path": "../contracts"
     }
   ],
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

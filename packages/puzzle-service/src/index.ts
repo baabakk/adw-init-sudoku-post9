@@ -104,7 +104,7 @@ class SudokuGenerator {
   static generatePuzzle(difficulty: Difficulty): Board {
     const full = SudokuGenerator.generateFullBoard();
     // Mapping of difficulty to number of clues (higher = easier)
-    const cluesMap: Record<Difficulty, number> = {
+    const cluesMap: { [K in Difficulty]: number } = {
       easy: 36,
       medium: 32,
       hard: 28,

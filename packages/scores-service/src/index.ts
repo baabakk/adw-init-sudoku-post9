@@ -1,5 +1,9 @@
-// scores-service — Scores Service
-// Scope: Persists completed-game results (player name, difficulty, time) and serves a per-difficulty top-10 leaderboard. Uses SQLite for persistence.
-// Owns: packages/scores-service
-// This team builds its slice here each phase.
-export {};
+/**
+ * Scores Service entry point.
+ *
+ * Phase 1: No operational code – the service will be wired up in later phases.
+ * This file provides a minimal export to satisfy the TypeScript compiler.
+ */
+export const initializeScoresService = (): void => {
+  // No initialization required for phase 1.
+};

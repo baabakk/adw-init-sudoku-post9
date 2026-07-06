@@ -21,17 +21,14 @@ import {
 class SudokuGenerator {
   /** Generate a completely solved board */
   static generateFullBoard(): Board {
-    // Use a mutable any[][] and cast to Board at the end to satisfy the strict tuple type.
-    const board: any = Array.from({ length: 9 }, () => Array(9).fill(0));
+    const board: number[][] = Array.from({ length: 9 }, () => Array(9).fill(0));
     const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     const shuffle = (arr: number[]) => arr.sort(() => Math.random() - 0.5);
 
     const isSafe = (row: number, col: number, num: number): boolean => {
-      // Row & column check
       for (let i = 0; i < 9; i++) {
         if (board[row][i] === num || board[i][col] === num) return false;
       }
-      // 3x3 subgrid check
       const startRow = Math.floor(row / 3) * 3;
       const startCol = Math.floor(col / 3) * 3;
       for (let r = 0; r < 3; r++) {
@@ -43,7 +40,7 @@ class SudokuGenerator {
     };
 
     const fill = (cell: number): boolean => {
-      if (cell === 81) return true; // all cells filled
+      if (cell === 81) return true;
       const row = Math.floor(cell / 9);
       const col = cell % 9;
       if (board[row][col] !== 0) return fill(cell + 1);
@@ -85,7 +82,7 @@ class SudokuGenerator {
     const solve = (cell: number): boolean => {
       if (cell === 81) {
         count++;
-        return count >= limit; // stop early if limit reached
+        return count >= limit;
       }
       const row = Math.floor(cell / 9);
       const col = cell % 9;
@@ -93,7 +90,6 @@ class SudokuGenerator {
 
       for (let num = 1; num <= 9; num++) {
         if (isSafe(row, col, num)) {
-          // Mutate board safely (cast to any for assignment)
           (board as any)[row][col] = num;
           if (solve(cell + 1)) return true;
           (board as any)[row][col] = 0;
@@ -109,12 +105,11 @@ class SudokuGenerator {
   /** Generate a puzzle board for the given difficulty ensuring a unique solution */
   static generatePuzzle(difficulty: Difficulty): Board {
     const full = SudokuGenerator.generateFullBoard();
-    // Number of clues based on difficulty (standard ranges)
-    const cluesMap: Record<Difficulty, number> = {
+    const cluesMap: { [K in Difficulty]: number } = {
       easy: 36,
       medium: 32,
       hard: 28,
-    } as any;
+    };
     const clues = cluesMap[difficulty];
     const cells = Array.from({ length: 81 }, (_, i) => i);
     const shuffle = (arr: number[]) => arr.sort(() => Math.random() - 0.5);
@@ -126,15 +121,14 @@ class SudokuGenerator {
       const r = Math.floor(idx / 9);
       const c = idx % 9;
       const backup = board[r][c];
-      board[r][c] = 0 as any;
-      // Ensure uniqueness
+      board[r][c] = 0;
       const copy = board.map(row => row.slice()) as Board;
       const solutions = SudokuGenerator.countSolutions(copy, 2);
       if (solutions !== 1) {
-        board[r][c] = backup as any; // revert removal
+        board[r][c] = backup;
       } else {
         removed++;
-        if (81 - removed <= clues) break; // stop when desired clue count reached
+        if (81 - removed <= clues) break;
       }
     }
     return board;
@@ -197,7 +191,6 @@ app.get("/puzzle", async (req: Request, res: Response) => {
       board,
       createdAt: new Date().toISOString(),
     };
-    // Persist asynchronously; ignore errors to keep endpoint responsive
     repo.save(puzzle).catch(err => console.error("Failed to save puzzle:", err));
 
     const response: GetPuzzleResponse = {
@@ -212,13 +205,8 @@ app.get("/puzzle", async (req: Request, res: Response) => {
   }
 });
 
-/**
- * Validate a submitted Sudoku board.
- * Returns { valid: true } if the board satisfies Sudoku rules, otherwise
- * { valid: false, message: <reason> }.
- */
+/** Validate a submitted Sudoku board. */
 function validateBoard(board: Board): { valid: boolean; message?: string } {
-  // Basic shape validation
   if (!Array.isArray(board) || board.length !== 9) {
     return { valid: false, message: "Board must be a 9x9 array" };
   }
@@ -235,7 +223,6 @@ function validateBoard(board: Board): { valid: boolean; message?: string } {
     }
   }
 
-  // Helper to check duplicates in an array of numbers (ignoring zeros)
   const hasDuplicates = (arr: number[]): boolean => {
     const seen = new Set<number>();
     for (const n of arr) {
@@ -246,14 +233,12 @@ function validateBoard(board: Board): { valid: boolean; message?: string } {
     return false;
   };
 
-  // Row validation
   for (let r = 0; r < 9; r++) {
     if (hasDuplicates(board[r])) {
       return { valid: false, message: `Duplicate value in row ${r + 1}` };
     }
   }
 
-  // Column validation
   for (let c = 0; c < 9; c++) {
     const col: number[] = [];
     for (let r = 0; r < 9; r++) col.push(board[r][c]);
@@ -262,7 +247,6 @@ function validateBoard(board: Board): { valid: boolean; message?: string } {
     }
   }
 
-  // Subgrid validation
   for (let br = 0; br < 3; br++) {
     for (let bc = 0; bc < 3; bc++) {
       const cells: number[] = [];
@@ -285,13 +269,11 @@ app.post("/validate", async (req: Request, res: Response) => {
   const payload = req.body as ValidateRequest;
   const { board, difficulty } = payload;
 
-  // Difficulty validation
   if (!difficulty || !["easy", "medium", "hard"].includes(difficulty)) {
     const errorResp: ValidateResponse = { valid: false, message: "Invalid or missing difficulty" };
     return res.status(400).json(errorResp);
   }
 
-  // Board validation using helper
   const result = validateBoard(board);
   const response: ValidateResponse = {
     valid: result.valid,
@@ -300,10 +282,8 @@ app.post("/validate", async (req: Request, res: Response) => {
   res.json(response);
 });
 
-// Export the contracts for downstream consumers (kept for compatibility)
 export { GetPuzzleRequest, GetPuzzleResponse, ValidateRequest, ValidateResponse } from "../../contracts/src";
 
-// Start server if this file is executed directly
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => console.log(`Puzzle service listening on port ${PORT}`));

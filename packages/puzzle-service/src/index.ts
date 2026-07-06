@@ -6,7 +6,6 @@ import {
   Difficulty,
   Board,
   Puzzle,
-  GetPuzzleRequest,
   GetPuzzleResponse,
   ValidateRequest,
   ValidateResponse,
@@ -288,8 +287,8 @@ app.post("/validate", async (req: Request, res: Response) => {
   res.json(response);
 });
 
-// Export only the request/response types for external consumers (re‑export from contracts)
-export { GetPuzzleRequest, GetPuzzleResponse, ValidateRequest, ValidateResponse } from "../../contracts/src";
+// Re‑export request/response types for external consumers
+export { ValidateRequest, ValidateResponse } from "../../contracts/src";
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;

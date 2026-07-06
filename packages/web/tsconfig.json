@@ -5,7 +5,9 @@
     "rootDir": "src",
     "strict": true,
     "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "moduleResolution": "NodeNext",
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"]
   },
   "references": [
     {

@@ -1,5 +1,216 @@
-// puzzle-service — Puzzle Service
-// Scope: Generates valid, uniquely-solvable Sudoku puzzles per difficulty, validates submitted boards, and exposes HTTP endpoints for puzzle retrieval and validation. Uses SQLite for persistence if needed.
-// Owns: packages/puzzle-service
-// This team builds its slice here each phase.
-export {};
+import express, { Request, Response } from "express";
+import { open, Database } from "sqlite";
+import sqlite3 from "sqlite3";
+import { v4 as uuidv4 } from "uuid";
+import {
+  Difficulty,
+  Board,
+  Puzzle,
+  PuzzleRequest,
+  PuzzleResponse,
+} from "../../contracts/src";
+
+/**
+ * Sudoku generator and solver utilities.
+ * The implementation uses a simple back‑tracking algorithm to generate a full
+ * valid board, then removes cells according to difficulty while ensuring the
+ * puzzle has a unique solution.
+ */
+class SudokuGenerator {
+  /** Generate a completely solved board */
+  static generateFullBoard(): Board {
+    const board: Board = Array.from({ length: 9 }, () => Array(9).fill(0 as const));
+    const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const shuffle = (arr: number[]) => arr.sort(() => Math.random() - 0.5);
+
+    const isSafe = (row: number, col: number, num: number): boolean => {
+      // Row & column check
+      for (let i = 0; i < 9; i++) {
+        if (board[row][i] === num || board[i][col] === num) return false;
+      }
+      // 3x3 subgrid check
+      const startRow = Math.floor(row / 3) * 3;
+      const startCol = Math.floor(col / 3) * 3;
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          if (board[startRow + r][startCol + c] === num) return false;
+        }
+      }
+      return true;
+    };
+
+    const fill = (cell: number): boolean => {
+      if (cell === 81) return true; // all cells filled
+      const row = Math.floor(cell / 9);
+      const col = cell % 9;
+      if (board[row][col] !== 0) return fill(cell + 1);
+
+      const shuffled = shuffle([...numbers]);
+      for (const num of shuffled) {
+        if (isSafe(row, col, num)) {
+          board[row][col] = num as any;
+          if (fill(cell + 1)) return true;
+          board[row][col] = 0 as any;
+        }
+      }
+      return false;
+    };
+
+    if (!fill(0)) {
+      throw new Error("Failed to generate a full Sudoku board");
+    }
+    return board;
+  }
+
+  /** Count the number of solutions for a given board (up to 2) */
+  static countSolutions(board: Board, limit = 2): number {
+    let count = 0;
+    const isSafe = (row: number, col: number, num: number): boolean => {
+      for (let i = 0; i < 9; i++) {
+        if (board[row][i] === num || board[i][col] === num) return false;
+      }
+      const startRow = Math.floor(row / 3) * 3;
+      const startCol = Math.floor(col / 3) * 3;
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          if (board[startRow + r][startCol + c] === num) return false;
+        }
+      }
+      return true;
+    };
+
+    const solve = (cell: number): boolean => {
+      if (cell === 81) {
+        count++;
+        return count >= limit; // stop early if limit reached
+      }
+      const row = Math.floor(cell / 9);
+      const col = cell % 9;
+      if (board[row][col] !== 0) return solve(cell + 1);
+
+      for (let num = 1; num <= 9; num++) {
+        if (isSafe(row, col, num)) {
+          board[row][col] = num as any;
+          if (solve(cell + 1)) return true;
+          board[row][col] = 0 as any;
+        }
+      }
+      return false;
+    };
+
+    solve(0);
+    return count;
+  }
+
+  /** Generate a puzzle board for the given difficulty ensuring a unique solution */
+  static generatePuzzle(difficulty: Difficulty): Board {
+    const full = SudokuGenerator.generateFullBoard();
+    // Number of clues based on difficulty (standard ranges)
+    const cluesMap: Record<Difficulty, number> = {
+      [Difficulty.Easy]: 36,
+      [Difficulty.Medium]: 32,
+      [Difficulty.Hard]: 28,
+    };
+    const clues = cluesMap[difficulty];
+    const cells = Array.from({ length: 81 }, (_, i) => i);
+    const shuffle = (arr: number[]) => arr.sort(() => Math.random() - 0.5);
+    const shuffled = shuffle(cells);
+    let removed = 0;
+    const board = full.map(row => row.slice()) as Board;
+
+    for (const idx of shuffled) {
+      const r = Math.floor(idx / 9);
+      const c = idx % 9;
+      const backup = board[r][c];
+      board[r][c] = 0 as any;
+      // Ensure uniqueness
+      const copy = board.map(row => row.slice()) as Board;
+      const solutions = SudokuGenerator.countSolutions(copy, 2);
+      if (solutions !== 1) {
+        board[r][c] = backup as any; // revert removal
+      } else {
+        removed++;
+        if (81 - removed <= clues) break; // stop when desired clue count reached
+      }
+    }
+    return board;
+  }
+}
+
+/** SQLite persistence layer (optional) */
+class PuzzleRepository {
+  private db!: Database<sqlite3.Database, sqlite3.Statement>;
+
+  async init(): Promise<void> {
+    this.db = await open({
+      filename: "puzzles.db",
+      driver: sqlite3.Database,
+    });
+    await this.db.exec(`
+      CREATE TABLE IF NOT EXISTS puzzles (
+        id TEXT PRIMARY KEY,
+        difficulty TEXT NOT NULL,
+        board TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+    `);
+  }
+
+  async save(puzzle: Puzzle): Promise<void> {
+    const stmt = await this.db.prepare(
+      "INSERT INTO puzzles (id, difficulty, board, created_at) VALUES (?, ?, ?, ?)"
+    );
+    await stmt.run(puzzle.id, puzzle.difficulty, JSON.stringify(puzzle.board), puzzle.createdAt);
+    await stmt.finalize();
+  }
+}
+
+/** Express server setup */
+const app = express();
+app.use(express.json());
+
+const repo = new PuzzleRepository();
+repo.init().catch(err => {
+  console.error("Failed to initialise SQLite DB:", err);
+});
+
+/** GET /puzzle?difficulty=easy|medium|hard */
+app.get("/puzzle", async (req: Request, res: Response) => {
+  const diffParam = req.query.difficulty as string | undefined;
+  if (!diffParam) {
+    return res.status(400).json({ error: "Missing difficulty query parameter" });
+  }
+  const difficulty = (diffParam.toLowerCase() as keyof typeof Difficulty) as Difficulty;
+  if (!Object.values(Difficulty).includes(difficulty)) {
+    return res.status(400).json({ error: "Invalid difficulty value" });
+  }
+
+  try {
+    const board = SudokuGenerator.generatePuzzle(difficulty);
+    const puzzle: Puzzle = {
+      id: uuidv4(),
+      difficulty,
+      board,
+      createdAt: new Date().toISOString(),
+    };
+    // Persist asynchronously; ignore errors to keep endpoint responsive
+    repo.save(puzzle).catch(err => console.error("Failed to save puzzle:", err));
+
+    const response: PuzzleResponse = { board, id: puzzle.id };
+    res.json(response);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to generate puzzle" });
+  }
+});
+
+// Export the contracts for downstream consumers
+export { PuzzleRequest, PuzzleResponse } from "../../contracts/src";
+
+// Start server if this file is executed directly
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Puzzle service listening on port ${PORT}`));
+}
+
+export default app;

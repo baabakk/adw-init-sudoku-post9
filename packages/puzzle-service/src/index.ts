@@ -6,8 +6,8 @@ import {
   Difficulty,
   Board,
   Puzzle,
-  PuzzleRequest,
-  PuzzleResponse,
+  GetPuzzleRequest,
+  GetPuzzleResponse,
   ValidateRequest,
   ValidateResponse,
 } from "../../contracts/src";
@@ -21,7 +21,8 @@ import {
 class SudokuGenerator {
   /** Generate a completely solved board */
   static generateFullBoard(): Board {
-    const board: Board = Array.from({ length: 9 }, () => Array(9).fill(0 as const));
+    // Use a mutable any[][] and cast to Board at the end to satisfy the strict tuple type.
+    const board: any = Array.from({ length: 9 }, () => Array(9).fill(0));
     const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     const shuffle = (arr: number[]) => arr.sort(() => Math.random() - 0.5);
 
@@ -50,9 +51,9 @@ class SudokuGenerator {
       const shuffled = shuffle([...numbers]);
       for (const num of shuffled) {
         if (isSafe(row, col, num)) {
-          board[row][col] = num as any;
+          board[row][col] = num;
           if (fill(cell + 1)) return true;
-          board[row][col] = 0 as any;
+          board[row][col] = 0;
         }
       }
       return false;
@@ -61,7 +62,7 @@ class SudokuGenerator {
     if (!fill(0)) {
       throw new Error("Failed to generate a full Sudoku board");
     }
-    return board;
+    return board as Board;
   }
 
   /** Count the number of solutions for a given board (up to 2) */
@@ -92,9 +93,10 @@ class SudokuGenerator {
 
       for (let num = 1; num <= 9; num++) {
         if (isSafe(row, col, num)) {
-          board[row][col] = num as any;
+          // Mutate board safely (cast to any for assignment)
+          (board as any)[row][col] = num;
           if (solve(cell + 1)) return true;
-          board[row][col] = 0 as any;
+          (board as any)[row][col] = 0;
         }
       }
       return false;
@@ -198,7 +200,11 @@ app.get("/puzzle", async (req: Request, res: Response) => {
     // Persist asynchronously; ignore errors to keep endpoint responsive
     repo.save(puzzle).catch(err => console.error("Failed to save puzzle:", err));
 
-    const response: PuzzleResponse = { board, id: puzzle.id };
+    const response: GetPuzzleResponse = {
+      puzzleId: puzzle.id,
+      difficulty: puzzle.difficulty,
+      board: puzzle.board,
+    };
     res.json(response);
   } catch (e) {
     console.error(e);
@@ -295,7 +301,7 @@ app.post("/validate", async (req: Request, res: Response) => {
 });
 
 // Export the contracts for downstream consumers (kept for compatibility)
-export { PuzzleRequest, PuzzleResponse, ValidateRequest, ValidateResponse } from "../../contracts/src";
+export { GetPuzzleRequest, GetPuzzleResponse, ValidateRequest, ValidateResponse } from "../../contracts/src";
 
 // Start server if this file is executed directly
 if (require.main === module) {

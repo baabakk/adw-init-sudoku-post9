@@ -18,7 +18,8 @@ import {
  * It uses an SQLite database (via better-sqlite3) for persistence.
  */
 export class ScoresService {
-  private readonly db: Database.Database;
+  // The underlying better-sqlite3 Database instance.
+  private readonly db: Database;
 
   /**
    * Creates a new ScoresService instance.
@@ -29,9 +30,7 @@ export class ScoresService {
     this.initializeSchema();
   }
 
-  /**
-   * Ensures the `scores` table exists.
-   */
+  /** Ensures the `scores` table exists. */
   private initializeSchema(): void {
     const createTable = `
       CREATE TABLE IF NOT EXISTS scores (
@@ -73,7 +72,7 @@ export class ScoresService {
    */
   getLeaderboard(difficulty: Difficulty): LeaderboardResponse {
     const stmt = this.db.prepare(
-      `SELECT player_name, difficulty, time_to_solve
+      `SELECT player_name, difficulty, time_to_solve, created_at
        FROM scores
        WHERE difficulty = ?
        ORDER BY time_to_solve ASC, created_at ASC
@@ -83,6 +82,7 @@ export class ScoresService {
       player_name: string;
       difficulty: string;
       time_to_solve: number;
+      created_at: string;
     }>;
 
     const entries: LeaderboardEntry[] = rows.map((row, index) => ({

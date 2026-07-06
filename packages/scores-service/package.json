@@ -4,6 +4,7 @@
   "main": "src/index.ts",
   "dependencies": {
     "@init-sudoku-post9/contracts": "*",
-    "better-sqlite3": "^8.0.0"
+    "better-sqlite3": "^8.0.0",
+    "@types/better-sqlite3": "^8.0.0"
   }
 }

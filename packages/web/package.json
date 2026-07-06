@@ -1,14 +1,21 @@
 {
-  "name": "@init-sudoku-post9/web-client",
-  "version": "0.0.0",
-  "main": "src/index.tsx",
+  "name": "@init-sudoku-post9/web",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "start": "webpack serve --mode development"
+  },
   "dependencies": {
-    "@init-sudoku-post9/contracts": "*",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "@init-sudoku-post9/contracts": "*"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0"
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "typescript": "^5.2.2"
   }
 }

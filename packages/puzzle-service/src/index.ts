@@ -14,9 +14,8 @@ import {
 
 /**
  * Sudoku generator and solver utilities.
- * The implementation uses a simple back‑tracking algorithm to generate a full
- * valid board, then removes cells according to difficulty while ensuring the
- * puzzle has a unique solution.
+ * Uses a simple back‑tracking algorithm to generate a full valid board, then removes
+ * cells according to difficulty while ensuring the puzzle has a unique solution.
  */
 class SudokuGenerator {
   /** Generate a completely solved board */
@@ -62,7 +61,7 @@ class SudokuGenerator {
     return board as Board;
   }
 
-  /** Count the number of solutions for a given board (up to 2) */
+  /** Count the number of solutions for a given board (up to `limit`). */
   static countSolutions(board: Board, limit = 2): number {
     let count = 0;
     const isSafe = (row: number, col: number, num: number): boolean => {
@@ -105,7 +104,8 @@ class SudokuGenerator {
   /** Generate a puzzle board for the given difficulty ensuring a unique solution */
   static generatePuzzle(difficulty: Difficulty): Board {
     const full = SudokuGenerator.generateFullBoard();
-    const cluesMap: { [K in Difficulty]: number } = {
+    // Simple mapping of difficulty to number of clues (higher = easier)
+    const cluesMap: Record<string, number> = {
       easy: 36,
       medium: 32,
       hard: 28,
@@ -191,6 +191,7 @@ app.get("/puzzle", async (req: Request, res: Response) => {
       board,
       createdAt: new Date().toISOString(),
     };
+    // Persist asynchronously – failures are logged but do not block response
     repo.save(puzzle).catch(err => console.error("Failed to save puzzle:", err));
 
     const response: GetPuzzleResponse = {
@@ -233,12 +234,14 @@ function validateBoard(board: Board): { valid: boolean; message?: string } {
     return false;
   };
 
+  // Rows
   for (let r = 0; r < 9; r++) {
     if (hasDuplicates(board[r])) {
       return { valid: false, message: `Duplicate value in row ${r + 1}` };
     }
   }
 
+  // Columns
   for (let c = 0; c < 9; c++) {
     const col: number[] = [];
     for (let r = 0; r < 9; r++) col.push(board[r][c]);
@@ -247,6 +250,7 @@ function validateBoard(board: Board): { valid: boolean; message?: string } {
     }
   }
 
+  // 3x3 subgrids
   for (let br = 0; br < 3; br++) {
     for (let bc = 0; bc < 3; bc++) {
       const cells: number[] = [];
@@ -269,6 +273,7 @@ app.post("/validate", async (req: Request, res: Response) => {
   const payload = req.body as ValidateRequest;
   const { board, difficulty } = payload;
 
+  // Basic difficulty validation – the board itself is validated by `validateBoard`
   if (!difficulty || !["easy", "medium", "hard"].includes(difficulty)) {
     const errorResp: ValidateResponse = { valid: false, message: "Invalid or missing difficulty" };
     return res.status(400).json(errorResp);
@@ -282,6 +287,7 @@ app.post("/validate", async (req: Request, res: Response) => {
   res.json(response);
 });
 
+// Export only the request/response types for external consumers (re‑export from contracts)
 export { GetPuzzleRequest, GetPuzzleResponse, ValidateRequest, ValidateResponse } from "../../contracts/src";
 
 if (require.main === module) {

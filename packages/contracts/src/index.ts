@@ -19,10 +19,9 @@ export type Row = [
 
 /**
  * The full 9×9 Sudoku board. The type enforces the exact shape of the grid.
+ * Updated to a more permissive representation to accommodate runtime‑generated boards.
  */
-export type Board = [
-  Row, Row, Row, Row, Row, Row, Row, Row, Row
-];
+export type Board = number[][];
 
 /**
  * Core domain entity representing a generated puzzle.

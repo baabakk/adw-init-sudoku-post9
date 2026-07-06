@@ -1,11 +1,7 @@
-/**
- * Shared contracts for the Sudoku platform.
- * All cross‑team types are defined here so that each subsystem can import a single source of truth.
- * The file is compiled with `strict` enabled.
- */
+// Shared contracts for Sudoku platform
 
 /**
- * Difficulty levels supported by the platform.
+ * Difficulty levels supported by the Sudoku game.
  */
 export enum Difficulty {
   Easy = "easy",
@@ -14,38 +10,42 @@ export enum Difficulty {
 }
 
 /**
- * A Sudoku board is a 9×9 matrix of numbers. The value `0` represents an empty cell.
- * The type is a simple `number[][]`; runtime validation ensures the correct dimensions.
+ * Represents a single cell value. `0` denotes an empty cell.
  */
-export type SudokuBoard = number[][];
+export type CellValue = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 /**
- * Core domain entity representing a generated puzzle.
+ * 9×9 Sudoku board. Each inner array is a row of nine `CellValue`s.
+ */
+export type Board = CellValue[][];
+
+/**
+ * Domain entity representing a generated puzzle.
  */
 export interface Puzzle {
-  /** Unique identifier for the puzzle (UUID string). */
+  /** Unique identifier for the puzzle */
   id: string;
-  /** Difficulty of the puzzle. */
+  /** Difficulty level */
   difficulty: Difficulty;
-  /** The board layout; 0 denotes an empty cell. */
-  board: SudokuBoard;
-  /** ISO‑8601 timestamp of when the puzzle was created. */
+  /** The board layout; `0` means empty cell */
+  board: Board;
+  /** ISO timestamp when the puzzle was created */
   createdAt: string;
 }
 
 /**
- * Core domain entity representing a player's score.
+ * Domain entity representing a player's score.
  */
 export interface Score {
-  /** Unique identifier for the score record (UUID string). */
+  /** Unique identifier for the score record */
   id: string;
-  /** Name of the player who achieved the score. */
+  /** Player's display name */
   playerName: string;
-  /** Difficulty of the puzzle that was solved. */
+  /** Difficulty of the puzzle solved */
   difficulty: Difficulty;
-  /** Time taken to solve the puzzle, in seconds. */
+  /** Time taken to solve the puzzle, in seconds */
   timeToSolve: number;
-  /** ISO‑8601 timestamp of when the score was recorded. */
+  /** ISO timestamp when the score was recorded */
   createdAt: string;
 }
 
@@ -53,47 +53,55 @@ export interface Score {
  * Request payload for fetching a puzzle.
  */
 export interface PuzzleRequest {
-  /** Desired difficulty of the puzzle. */
+  /** Desired difficulty */
   difficulty: Difficulty;
 }
 
 /**
- * Response payload containing a generated puzzle.
+ * Response payload containing a puzzle.
  */
 export interface PuzzleResponse {
-  /** The puzzle board; 0 denotes an empty cell. */
-  board: SudokuBoard;
-  /** Difficulty of the returned puzzle. */
-  difficulty: Difficulty;
+  /** The puzzle board */
+  board: Board;
+  /** Optional identifier for the puzzle (useful for validation later) */
+  id?: string;
 }
 
 /**
  * Request payload for validating a completed board.
  */
 export interface ValidateRequest {
-  /** The board to validate. */
-  board: SudokuBoard;
+  /** The board to validate */
+  board: Board;
 }
 
 /**
- * Response payload for board validation.
+ * Result of board validation.
+ */
+export interface ValidationResult {
+  /** True if the board satisfies Sudoku rules */
+  isValid: boolean;
+  /** Human‑readable error messages when `isValid` is false */
+  errors: string[];
+}
+
+/**
+ * Response payload for validation endpoint.
  */
 export interface ValidateResponse {
-  /** Whether the board satisfies Sudoku rules. */
-  valid: boolean;
-  /** Optional list of error messages when `valid` is false. */
-  errors?: string[];
+  /** Validation outcome */
+  result: ValidationResult;
 }
 
 /**
  * Request payload for submitting a score.
  */
 export interface ScoreRequest {
-  /** Player's display name. */
+  /** Player's name */
   playerName: string;
-  /** Difficulty of the puzzle that was solved. */
+  /** Difficulty of the puzzle solved */
   difficulty: Difficulty;
-  /** Time taken to solve the puzzle, in seconds. */
+  /** Time taken to solve, in seconds */
   timeToSolve: number;
 }
 
@@ -101,30 +109,30 @@ export interface ScoreRequest {
  * Response payload after a score submission.
  */
 export interface ScoreResponse {
-  /** Indicates if the score was successfully recorded. */
+  /** Indicates whether the score was accepted */
   success: boolean;
-  /** Identifier of the created score record. */
-  scoreId: string;
+  /** Identifier of the created score record */
+  scoreId?: string;
 }
 
 /**
- * Single entry in a leaderboard.
+ * Single entry in the leaderboard.
  */
 export interface LeaderboardEntry {
-  /** Player's display name. */
+  /** Player's name */
   playerName: string;
-  /** Difficulty of the puzzle. */
+  /** Difficulty level */
   difficulty: Difficulty;
-  /** Time taken to solve the puzzle, in seconds. */
+  /** Time taken to solve, in seconds */
   timeToSolve: number;
-  /** Rank of the entry within the leaderboard (1‑based). */
+  /** Rank of the entry (1 = best) */
   rank: number;
 }
 
 /**
- * Response payload for a leaderboard query.
+ * Response payload for leaderboard retrieval.
  */
 export interface LeaderboardResponse {
-  /** Ordered list of the top entries for the requested difficulty. */
+  /** Ordered list of top entries */
   entries: LeaderboardEntry[];
 }

@@ -104,8 +104,8 @@ class SudokuGenerator {
   /** Generate a puzzle board for the given difficulty ensuring a unique solution */
   static generatePuzzle(difficulty: Difficulty): Board {
     const full = SudokuGenerator.generateFullBoard();
-    // Simple mapping of difficulty to number of clues (higher = easier)
-    const cluesMap: Record<string, number> = {
+    // Mapping of difficulty to number of clues (higher = easier)
+    const cluesMap: Record<Difficulty, number> = {
       easy: 36,
       medium: 32,
       hard: 28,
@@ -273,12 +273,13 @@ app.post("/validate", async (req: Request, res: Response) => {
   const payload = req.body as ValidateRequest;
   const { board, difficulty } = payload;
 
-  // Basic difficulty validation – the board itself is validated by `validateBoard`
+  // Validate difficulty first
   if (!difficulty || !["easy", "medium", "hard"].includes(difficulty)) {
     const errorResp: ValidateResponse = { valid: false, message: "Invalid or missing difficulty" };
     return res.status(400).json(errorResp);
   }
 
+  // Validate board structure and Sudoku rules
   const result = validateBoard(board);
   const response: ValidateResponse = {
     valid: result.valid,

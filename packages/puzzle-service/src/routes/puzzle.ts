@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { generatePuzzle } from '../services/puzzleGenerator';
+import { generatePuzzle } from '../generator';
 import type { PuzzleRequest, PuzzleResponse } from '../types';
-import { insertPuzzle } from '../database/puzzleRepository';
+import { insertPuzzle } from '../database';
 
 const router = Router();
 
@@ -15,23 +15,21 @@ router.get(
     try {
       const difficultyParam = req.query.difficulty;
       if (!difficultyParam) {
-        res.status(400).json({ board: [] } as any);
-        return;
+        return res.status(400).json({ board: [] } as any);
       }
       const difficulty = difficultyParam as PuzzleRequest['difficulty'];
       if (!['easy', 'medium', 'hard'].includes(difficulty)) {
-        res.status(400).json({ board: [] } as any);
-        return;
+        return res.status(400).json({ board: [] } as any);
       }
       const puzzle = generatePuzzle(difficulty);
       // Persist the puzzle (optional for this phase)
       try {
-        insertPuzzle(puzzle, difficulty);
+        insertPuzzle(difficulty, puzzle);
       } catch (e) {
         // Log but do not fail the request
         console.error('Failed to persist puzzle:', e);
       }
-      res.json(puzzle);
+      return res.json({ board: puzzle } as PuzzleResponse);
     } catch (err) {
       next(err);
     }

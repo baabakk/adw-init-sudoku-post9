@@ -1,24 +1,15 @@
-import express, { json } from "express";
-import scoresRouter from "./routes/scores";
-import leaderboardRouter from "./routes/leaderboard";
-import { errorHandler } from "./middleware/errorHandler";
+import express from "express";
+import router from "./routes";
 
 const app = express();
 
-// Middleware
-app.use(json());
+// Middleware to parse JSON bodies
+app.use(express.json());
 
-// Routes
-app.use(scoresRouter);
-app.use(leaderboardRouter);
+// Mount the scores service routes under the root path
+app.use(router);
 
-// Error handling – must be after all routes
-app.use(errorHandler);
-
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
-
+const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {
   console.log(`Scores service listening on port ${PORT}`);
 });
-
-export default app;

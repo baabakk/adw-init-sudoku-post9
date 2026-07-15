@@ -1,15 +1,13 @@
-import { Difficulty, SudokuBoard } from "@init-sudoku-post9/contracts";
-
 /**
- * Request payload for GET /puzzle
+ * Types for Puzzle Service API contracts.
  */
 export interface PuzzleRequest {
-  difficulty: Difficulty;
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 
-/**
- * Response payload for GET /puzzle
- */
 export interface PuzzleResponse {
-  board: SudokuBoard;
+  /**
+   * 9x9 Sudoku board. Cells with value 0 represent empty slots.
+   */
+  board: number[][];
 }

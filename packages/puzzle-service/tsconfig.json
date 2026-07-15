@@ -1,13 +1,16 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
     "outDir": "dist",
     "rootDir": "src",
-    "strict": true,
+    "composite": true,
     "declaration": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "sourceMap": true,
+    "moduleResolution": "node",
     "target": "ES2022",
+    "module": "CommonJS",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true
   },

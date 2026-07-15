@@ -1,55 +1,65 @@
-import { SudokuBoard, SudokuRow, SudokuCell } from "@init-sudoku-post9/contracts";
+import type { PuzzleResponse } from '../types';
 
 /**
- * Validates a fully filled Sudoku board.
- * Returns an array of error messages; empty array means the board is valid.
+ * Validates a Sudoku board.
+ * Returns an object indicating whether the board is valid and, if not, an error message.
  */
-export function validateFullBoard(board: SudokuBoard): string[] {
-  const errors: string[] = [];
-
-  // Helper to check a set of nine cells contains 1-9 exactly once
-  const checkSet = (cells: SudokuCell[], context: string) => {
-    const seen = new Set<number>();
-    for (const v of cells) {
-      if (v === 0) {
-        errors.push(`${context} contains empty cell`);
-        continue;
-      }
-      if (seen.has(v)) {
-        errors.push(`${context} has duplicate value ${v}`);
-      } else {
-        seen.add(v);
+export function validateBoard(board: number[][]): { valid: boolean; error?: string } {
+  // Basic shape check
+  if (!Array.isArray(board) || board.length !== 9) {
+    return { valid: false, error: 'Board must be a 9x9 array' };
+  }
+  for (const row of board) {
+    if (!Array.isArray(row) || row.length !== 9) {
+      return { valid: false, error: 'Board must be a 9x9 array' };
+    }
+    for (const cell of row) {
+      if (typeof cell !== 'number' || cell < 0 || cell > 9) {
+        return { valid: false, error: 'Cell values must be integers 0-9' };
       }
     }
-    if (seen.size !== 9) {
-      errors.push(`${context} does not contain all digits 1-9`);
-    }
-  };
-
-  // Rows
-  board.forEach((row, i) => checkSet(row, `Row ${i + 1}`));
-
-  // Columns
-  for (let col = 0; col < 9; col++) {
-    const column: SudokuCell[] = [];
-    for (let row = 0; row < 9; row++) {
-      column.push(board[row][col]);
-    }
-    checkSet(column, `Column ${col + 1}`);
   }
 
-  // 3x3 subgrids
+  // Helper to check duplicates in an array (ignoring zeros)
+  const hasDuplicates = (arr: number[]): boolean => {
+    const seen = new Set<number>();
+    for (const n of arr) {
+      if (n === 0) continue;
+      if (seen.has(n)) return true;
+      seen.add(n);
+    }
+    return false;
+  };
+
+  // Check rows
+  for (const row of board) {
+    if (hasDuplicates(row)) {
+      return { valid: false, error: 'Duplicate value in a row' };
+    }
+  }
+
+  // Check columns
+  for (let col = 0; col < 9; col++) {
+    const column = board.map((row) => row[col]);
+    if (hasDuplicates(column)) {
+      return { valid: false, error: 'Duplicate value in a column' };
+    }
+  }
+
+  // Check 3x3 subgrids
   for (let boxRow = 0; boxRow < 3; boxRow++) {
     for (let boxCol = 0; boxCol < 3; boxCol++) {
-      const cells: SudokuCell[] = [];
+      const cells: number[] = [];
       for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 3; c++) {
           cells.push(board[boxRow * 3 + r][boxCol * 3 + c]);
         }
       }
-      checkSet(cells, `Box ${boxRow * 3 + boxCol + 1}`);
+      if (hasDuplicates(cells)) {
+        return { valid: false, error: 'Duplicate value in a subgrid' };
+      }
     }
   }
 
-  return errors;
+  return { valid: true };
 }

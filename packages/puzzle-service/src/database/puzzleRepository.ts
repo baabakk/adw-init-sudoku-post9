@@ -1,27 +1,28 @@
-import db from './db';
-import { PuzzleDbRow } from '@init-sudoku-post9/contracts';
-import { v4 as uuidv4 } from 'uuid';
-import { SudokuBoard, Difficulty } from '@init-sudoku-post9/contracts';
+import { db } from './db';
+import type { PuzzleRequest, PuzzleResponse } from '../types';
 
 /**
  * Inserts a generated puzzle into the database.
- * Returns the generated puzzle id.
  */
-export function insertPuzzle(difficulty: Difficulty, board: SudokuBoard): string {
-  const id = uuidv4();
-  const createdAt = new Date().toISOString();
+export function insertPuzzle(puzzle: PuzzleResponse, difficulty: PuzzleRequest['difficulty']): number {
   const stmt = db.prepare(
-    'INSERT INTO puzzles (id, difficulty, board, created_at) VALUES (?, ?, ?, ?)',
+    'INSERT INTO puzzles (difficulty, board) VALUES (?, ?)',
   );
-  stmt.run(id, difficulty, JSON.stringify(board), createdAt);
-  return id;
+  const info = stmt.run(difficulty, JSON.stringify(puzzle.board));
+  return Number(info.lastInsertRowid);
 }
 
 /**
  * Retrieves a puzzle by its id.
  */
-export function getPuzzleById(id: string): PuzzleDbRow | undefined {
+export function getPuzzleById(id: number): { id: number; difficulty: string; board: number[][]; created_at: string } | undefined {
   const stmt = db.prepare('SELECT * FROM puzzles WHERE id = ?');
   const row = stmt.get(id);
-  return row as PuzzleDbRow | undefined;
+  if (!row) return undefined;
+  return {
+    id: row.id,
+    difficulty: row.difficulty,
+    board: JSON.parse(row.board),
+    created_at: row.created_at,
+  };
 }

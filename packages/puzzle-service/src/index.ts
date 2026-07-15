@@ -1,27 +1,22 @@
 import express, { Request, Response, NextFunction } from 'express';
 import puzzleRouter from './routes/puzzle';
-import db from './database/db'; // Ensure DB is initialized on import
+import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware to parse JSON bodies (for future POST endpoints)
 app.use(express.json());
-
-// Simple health check endpoint
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok' });
-});
 
 // Mount puzzle routes
 app.use('/', puzzleRouter);
 
-// Global error handler (fallback)
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+// 404 handler
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ error: 'Not Found' });
 });
 
+// Error handling middleware
+app.use(errorHandler);
+
+const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {
   console.log(`Puzzle Service listening on port ${PORT}`);
 });

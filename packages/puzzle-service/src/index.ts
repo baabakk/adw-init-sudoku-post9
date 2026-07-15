@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 
 // Mount puzzle routes
-app.use('/puzzle', puzzleRouter);
+app.use('/', puzzleRouter);
 
 // Global error handler
 app.use(errorHandler);

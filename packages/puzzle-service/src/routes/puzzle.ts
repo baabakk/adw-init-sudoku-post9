@@ -1,35 +1,29 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { generatePuzzle } from '../generator';
-import type { PuzzleRequest, PuzzleResponse } from '../types';
+import { generatePuzzle } from '../generator/sudokuGenerator';
 import { insertPuzzle } from '../database';
+import { validatePuzzleRequest } from '../validation/inputValidator';
+import type { PuzzleResponse } from '../types/contracts';
 
 const router = Router();
 
 /**
  * GET /puzzle?difficulty=easy|medium|hard
- * Returns a generated Sudoku puzzle.
+ * Returns a newly generated Sudoku puzzle.
  */
-router.get('/', (req: Request, res: Response<PuzzleResponse>, next: NextFunction) => {
-  try {
-    const difficulty = req.query.difficulty as string;
-    if (!difficulty || !['easy', 'medium', 'hard'].includes(difficulty)) {
-      const err: any = new Error('Invalid or missing difficulty parameter');
-      err.status = 400;
-      throw err;
-    }
-    const puzzle = generatePuzzle(difficulty as PuzzleRequest['difficulty']);
-    // Persist the puzzle (optional)
+router.get(
+  '/puzzle',
+  validatePuzzleRequest,
+  (req: Request, res: Response<PuzzleResponse>, next: NextFunction) => {
     try {
-      insertPuzzle(difficulty as PuzzleRequest['difficulty'], puzzle);
-    } catch (e) {
-      // Log but do not fail the request
-      console.error('Failed to persist puzzle:', e);
+      const { difficulty } = (req as any).puzzleRequest;
+      const puzzle = generatePuzzle(difficulty);
+      // Persist the generated puzzle (optional but required by FR-18)
+      insertPuzzle(difficulty, puzzle.board);
+      res.json(puzzle);
+    } catch (err) {
+      next(err);
     }
-    const response: PuzzleResponse = { board: puzzle };
-    res.json(response);
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
 
 export default router;

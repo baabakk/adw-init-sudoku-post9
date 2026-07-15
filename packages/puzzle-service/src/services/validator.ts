@@ -1,4 +1,4 @@
-import type { PuzzleResponse } from '../types';
+import type { PuzzleResponse } from '../types/contracts';
 
 /**
  * Validates a Sudoku board.

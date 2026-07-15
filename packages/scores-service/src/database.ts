@@ -1,7 +1,6 @@
 import Database from "better-sqlite3";
 import type { ScoreDbRow } from "@init-sudoku-post9/contracts";
 import path from "path";
-import { fileURLToPath } from "url";
 
 /**
  * Returns a singleton instance of the SQLite database.
@@ -12,9 +11,7 @@ let dbInstance: Database.Database | null = null;
 export function getDb(): Database.Database {
   if (dbInstance) return dbInstance;
 
-  // Resolve a path relative to the current file location.
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
+  // Resolve a path relative to the current file location using __dirname (CommonJS).
   const dbPath = path.resolve(__dirname, "../../data/scores.db");
 
   dbInstance = new Database(dbPath);

@@ -1,5 +1,6 @@
 import express, { json } from "express";
 import scoresRouter from "./routes/scores";
+import leaderboardRouter from "./routes/leaderboard";
 import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
@@ -9,6 +10,7 @@ app.use(json());
 
 // Routes
 app.use(scoresRouter);
+app.use(leaderboardRouter);
 
 // Error handling – must be after all routes
 app.use(errorHandler);

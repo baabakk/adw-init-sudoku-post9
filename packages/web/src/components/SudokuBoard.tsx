@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "../styles/SudokuBoard.module.css";
-import type { SudokuBoard as SudokuBoardType } from "../types/contracts";
-import { Cell } from "./Cell";
+import type { SudokuBoard as SudokuBoardType, SudokuRow, SudokuCell } from "../types/contracts.js";
+import { Cell } from "./Cell.js";
 
 interface SudokuBoardProps {
   board: SudokuBoardType | null;
@@ -15,8 +15,8 @@ export const SudokuBoard: React.FC<SudokuBoardProps> = ({ board, onCellChange })
 
   return (
     <div className={styles.board} data-testid="sudoku-board">
-      {board.map((row, rowIndex) =>
-        row.map((cellValue, colIndex) => (
+      {board.map((row: SudokuRow, rowIndex: number) =>
+        row.map((cellValue: SudokuCell, colIndex: number) => (
           <Cell
             key={`${rowIndex}-${colIndex}`}
             row={rowIndex}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { getPuzzle } from "../services/puzzleService";
-import { validatePuzzleResponse } from "../utils/validation";
-import type { PuzzleRequest, PuzzleResponse, SudokuBoard, Difficulty } from "../types/contracts";
+import { getPuzzle } from "../services/puzzleService.js";
+import { validatePuzzleResponse } from "../utils/validation.js";
+import type { PuzzleRequest, SudokuBoard, Difficulty, SudokuRow, SudokuCell } from "../types/contracts.js";
 
 /**
  * Hook to fetch a Sudoku puzzle based on difficulty.
@@ -44,9 +44,9 @@ export function usePuzzle(initialDifficulty: Difficulty) {
   const updateCell = useCallback(
     (row: number, col: number, value: number) => {
       if (!board) return;
-      const newBoard = board.map((r, i) =>
+      const newBoard = board.map((r: SudokuRow, i: number) =>
         i === row
-          ? r.map((c, j) => (j === col ? (value as any) : c))
+          ? (r.map((c: SudokuCell, j: number) => (j === col ? (value as SudokuCell) : c)) as SudokuRow)
           : r,
       ) as SudokuBoard;
       setBoard(newBoard);

@@ -2,7 +2,7 @@
  * Runtime validation for the PuzzleResponse contract.
  * Ensures the shape matches the expected 9×9 Sudoku board with values 0‑9.
  */
-import type { PuzzleResponse, SudokuBoard, SudokuRow, SudokuCell } from "../types/contracts";
+import type { PuzzleResponse, SudokuBoard, SudokuRow, SudokuCell } from "../types/contracts.js";
 
 /**
  * Type guard that checks whether a value is a valid SudokuCell (0‑9).

@@ -2,7 +2,7 @@
  * Service client for the Puzzle Service API.
  * Provides a function to fetch a Sudoku puzzle based on difficulty.
  */
-import type { PuzzleRequest, PuzzleResponse } from "../types/contracts";
+import type { PuzzleRequest, PuzzleResponse } from "../types/contracts.js";
 
 /**
  * Base URL for the Puzzle Service. In a real deployment this could be

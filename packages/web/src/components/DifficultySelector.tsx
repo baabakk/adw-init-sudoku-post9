@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "../styles/DifficultySelector.module.css";
-import type { Difficulty } from "../types/contracts";
+import type { Difficulty } from "../types/contracts.js";
 
 interface DifficultySelectorProps {
   selected: Difficulty;

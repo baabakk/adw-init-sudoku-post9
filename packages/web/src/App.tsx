@@ -1,8 +1,8 @@
 import React from "react";
-import { DifficultySelector } from "./components/DifficultySelector";
-import { SudokuBoard } from "./components/SudokuBoard";
-import { usePuzzle } from "./hooks/usePuzzle";
-import type { Difficulty } from "./types/contracts";
+import { DifficultySelector } from "./components/DifficultySelector.js";
+import { SudokuBoard } from "./components/SudokuBoard.js";
+import { usePuzzle } from "./hooks/usePuzzle.js";
+import type { Difficulty } from "./types/contracts.js";
 
 /**
  * Main application component.

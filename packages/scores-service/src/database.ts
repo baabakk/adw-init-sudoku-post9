@@ -6,9 +6,9 @@ import path from "path";
  * Returns a singleton instance of the SQLite database.
  * The database file is located in a `data` directory adjacent to this module.
  */
-let dbInstance: Database.Database | null = null;
+let dbInstance: ReturnType<typeof Database> | null = null;
 
-export function getDb(): Database.Database {
+export function getDb() {
   if (dbInstance) return dbInstance;
 
   // Resolve a path relative to the current file location using __dirname (CommonJS).

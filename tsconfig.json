@@ -1,0 +1,17 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/contracts"
+    },
+    {
+      "path": "packages/web"
+    },
+    {
+      "path": "packages/puzzle-service"
+    },
+    {
+      "path": "packages/scores-service"
+    }
+  ]
+}

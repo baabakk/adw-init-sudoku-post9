@@ -1,19 +1,5 @@
-import Database from 'better-sqlite3';
-import { Difficulty } from './generator';
-
-/**
- * Initialize SQLite database and ensure the puzzles table exists.
- */
-const db = new Database('puzzle-service.db');
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS puzzles (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    difficulty TEXT NOT NULL,
-    board TEXT NOT NULL,
-    created_at TEXT NOT NULL
-  );
-`);
+import { db } from './db';
+import type { Difficulty } from './types';
 
 /**
  * Insert a generated puzzle into the database.

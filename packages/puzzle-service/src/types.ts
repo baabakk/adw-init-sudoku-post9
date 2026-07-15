@@ -1,20 +1,21 @@
 /**
- * Types for Puzzle Service API contracts.
- * These definitions must match the JSON schema contracts added in this phase.
+ * Types for the Puzzle Service.
  */
 
+export type Difficulty = 'easy' | 'medium' | 'hard';
+
+/**
+ * Request payload for GET /puzzle endpoint.
+ */
 export interface PuzzleRequest {
-  /**
-   * Difficulty level of the puzzle to generate.
-   * Allowed values: "easy", "medium", "hard".
-   */
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: Difficulty;
 }
 
+/**
+ * Response payload containing a Sudoku board.
+ * The board is a 9x9 matrix of numbers where 0 represents an empty cell.
+ */
 export interface PuzzleResponse {
-  /**
-   * 9x9 Sudoku board where 0 represents an empty cell.
-   * The board is a two‑dimensional array of numbers (0‑9).
-   */
-  board: number[][];
+  board: number[][]; // 9x9 array, values 0-9
+  description?: string; // optional description
 }

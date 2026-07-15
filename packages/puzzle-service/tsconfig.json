@@ -1,19 +1,19 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "commonjs",
     "outDir": "dist",
     "rootDir": "src",
-    "strict": true,
+    "composite": true,
+    "moduleResolution": "node",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "module": "CommonJS",
+    "lib": ["ES2022", "DOM"],
     "sourceMap": true,
     "declaration": true,
-    "composite": true,
-    "lib": ["ES2022", "DOM"],
-    "resolveJsonModule": true
+    "declarationMap": true
   },
   "include": ["src"],
-  "references": [{"path": "../contracts"}]
+  "references": [{ "path": "../contracts" }]
 }

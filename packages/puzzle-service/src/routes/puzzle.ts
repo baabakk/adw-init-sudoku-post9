@@ -7,33 +7,29 @@ const router = Router();
 
 /**
  * GET /puzzle?difficulty=easy|medium|hard
- * Returns a newly generated Sudoku puzzle.
+ * Returns a generated Sudoku puzzle.
  */
-router.get(
-  '/puzzle',
-  (req: Request<{}, {}, {}, { difficulty?: string }>, res: Response<PuzzleResponse>, next: NextFunction) => {
-    try {
-      const difficultyParam = req.query.difficulty;
-      if (!difficultyParam) {
-        return res.status(400).json({ board: [] } as any);
-      }
-      const difficulty = difficultyParam as PuzzleRequest['difficulty'];
-      if (!['easy', 'medium', 'hard'].includes(difficulty)) {
-        return res.status(400).json({ board: [] } as any);
-      }
-      const puzzle = generatePuzzle(difficulty);
-      // Persist the puzzle (optional for this phase)
-      try {
-        insertPuzzle(difficulty, puzzle);
-      } catch (e) {
-        // Log but do not fail the request
-        console.error('Failed to persist puzzle:', e);
-      }
-      return res.json({ board: puzzle } as PuzzleResponse);
-    } catch (err) {
-      next(err);
+router.get('/', (req: Request, res: Response<PuzzleResponse>, next: NextFunction) => {
+  try {
+    const difficulty = req.query.difficulty as string;
+    if (!difficulty || !['easy', 'medium', 'hard'].includes(difficulty)) {
+      const err: any = new Error('Invalid or missing difficulty parameter');
+      err.status = 400;
+      throw err;
     }
-  },
-);
+    const puzzle = generatePuzzle(difficulty as PuzzleRequest['difficulty']);
+    // Persist the puzzle (optional)
+    try {
+      insertPuzzle(difficulty as PuzzleRequest['difficulty'], puzzle);
+    } catch (e) {
+      // Log but do not fail the request
+      console.error('Failed to persist puzzle:', e);
+    }
+    const response: PuzzleResponse = { board: puzzle };
+    res.json(response);
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;

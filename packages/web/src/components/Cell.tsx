@@ -1,5 +1,5 @@
 import React, { ChangeEvent } from "react";
-import styles from "../styles/SudokuBoard.module.css";
+import styles from "../styles/Cell.module.css";
 
 type CellProps = {
   row: number;

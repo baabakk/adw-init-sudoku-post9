@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getPuzzle } from "../services/puzzleService";
-import { validatePuzzleResponse } from "../utils/validateResponse";
+import { validatePuzzleResponse } from "../utils/validation";
 import type { PuzzleRequest, PuzzleResponse, SudokuBoard, Difficulty } from "../types/contracts";
 
 /**

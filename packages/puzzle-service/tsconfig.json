@@ -4,15 +4,13 @@
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
+    "declaration": true,
     "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
-  "references": [
-    {
-      "path": "../contracts"
-    }
-  ],
-  "include": [
-    "src"
-  ]
+  "include": ["src"],
+  "references": [{ "path": "../contracts" }]
 }
